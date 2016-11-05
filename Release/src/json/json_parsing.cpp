@@ -154,6 +154,7 @@ protected:
     virtual bool CompleteComment(Token &token);
     virtual bool CompleteStringLiteral(Token &token);
     bool handle_unescape_char(Token &token);
+    utf16char scan_unicode_octet();
 
 private:
 
@@ -713,13 +714,47 @@ void convert_append_unicode_code_unit(JSON_Parser<char>::Token &token, utf16char
     token.string_val.append(::utility::conversions::utf16_to_utf8(utf16));
 }
 
+void convert_append_unicode_sequence(JSON_Parser<wchar_t>::Token &token, const utf16string & value) {
+    token.string_val.append(value.begin(), value.end());
+}
+void convert_append_unicode_sequence(JSON_Parser<char>::Token &token, const utf16string & value) {
+    token.string_val.append(::utility::conversions::utf16_to_utf8(value));
+}
+
+template <typename CharType>
+utf16char JSON_Parser<CharType>::scan_unicode_octet() {
+    // A four-hexdigit Unicode character.
+    // Transform into a 16 bit code point.
+    int decoded = 0;
+    for (int i = 0; i < 4; ++i) {
+        auto ch = NextCharacter();
+        int ch_int = static_cast<int>(ch);
+        if (ch_int < 0 || ch_int > 127)
+            return 0;
+#ifdef _WIN32
+        const int isxdigitResult = _isxdigit_l(ch_int, utility::details::scoped_c_thread_locale::c_locale());
+#else
+        const int isxdigitResult = isxdigit(ch_int);
+#endif
+        if (!isxdigitResult)
+            return 0;
+
+        int val = _hexval[static_cast<size_t>(ch_int)];
+        _ASSERTE(val != -1);
+
+        // Add the input char to the decoded number
+        decoded |= (val << (4 * (3 - i)));
+    }
+    return static_cast<utf16char>(decoded);
+}
+
 template <typename CharType>
 inline bool JSON_Parser<CharType>::handle_unescape_char(Token &token)
 {
     token.has_unescape_symbol = true;
 
     // This function converts unescaped character pairs (e.g. "\t") into their ASCII or Unicode representations (e.g. tab sign)
-    // Also it handles \u + 4 hexadecimal digits
+    // Also it handles plain-text unicode encoding (sequences of \u + 4 hexadecimal digits)
     auto ch = NextCharacter();
     switch (ch)
     {
@@ -749,34 +784,35 @@ inline bool JSON_Parser<CharType>::handle_unescape_char(Token &token)
             return true;
         case 'u':
         {
-            // A four-hexdigit Unicode character.
-            // Transform into a 16 bit code point.
-            int decoded = 0;
-            for (int i = 0; i < 4; ++i)
-            {
-                ch = NextCharacter();
-                int ch_int = static_cast<int>(ch);
-                if (ch_int < 0 || ch_int > 127)
+            // This string stores intermediary utf-16 octets to be converted all at once for multiple-octet characters (e.g. emoji)
+            utf16string unicodeSequence;
+            // Read current unicode octet and all adjacent octets
+            while (true) {
+                utf16char octet = scan_unicode_octet();
+                if (!octet)
                     return false;
-#ifdef _WIN32
-                const int isxdigitResult = _isxdigit_l(ch_int, utility::details::scoped_c_thread_locale::c_locale());
-#else
-                const int isxdigitResult = isxdigit(ch_int);
-#endif
-                if (!isxdigitResult)
-                    return false;
-
-                int val = _hexval[static_cast<size_t>(ch_int)];
-                _ASSERTE(val != -1);
-
-                // Add the input char to the decoded number
-                decoded |= (val << (4 * (3 - i)));
+                // Add the octet to the sequence
+                unicodeSequence.push_back(octet);
+                // Look for another escape character
+                if (PeekCharacter() == '\\') {
+                    NextCharacter();
+                    if (PeekCharacter() != 'u') {
+                        // Finalize the unicode sequence and handle the new escaped character
+                        convert_append_unicode_sequence(token, unicodeSequence);
+                        // Maximum one recursive call, since it's guaranteed to not be '\u'
+                        return handle_unescape_char(token);
+                    }
+                    else {
+                        // Put the parser at the same state as it was entering the loop, with the pointer after '\u'
+                        NextCharacter();
+                    }
+                }
+                else {
+                    // Finalize the unicode sequence and resume normal parsing
+                    convert_append_unicode_sequence(token, unicodeSequence);
+                    return true;
+                }
             }
-
-            // Construct the character based on the decoded number
-			convert_append_unicode_code_unit(token, static_cast<utf16char>(decoded));
-
-            return true;
         }
         default:
             return false;

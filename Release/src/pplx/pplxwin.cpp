@@ -198,8 +198,7 @@ namespace details
     //
     // scheduler implementation
     //
-#if defined(__cplusplus_winrt)
-
+#if defined(__cplusplus_winrt) && !TV_API
     _PPLXIMP void windows_scheduler::schedule( TaskProc_t proc, _In_ void* param)
     {
         auto workItemHandler = ref new Windows::System::Threading::WorkItemHandler([proc, param](Windows::Foundation::IAsyncAction ^ )

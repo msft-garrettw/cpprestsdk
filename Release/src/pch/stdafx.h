@@ -41,6 +41,13 @@
 #endif
 #endif
 #include <SDKDDKVer.h>
+#ifdef WINAPI_FAMILY
+#define TV_API (WINAPI_FAMILY == WINAPI_FAMILY_TV_APP | WINAPI_FAMILY == WINAPI_FAMILY_TV_TITLE)
+#define NOMINMAX
+#else
+#define TV_API 0
+#endif
+
 // use the debug version of the CRT if _DEBUG is defined
 #ifdef _DEBUG
     #define _CRTDBG_MAP_ALLOC
@@ -58,7 +65,7 @@
 #include <objbase.h>
 
 // Windows Header Files:
-#if !defined(__cplusplus_winrt)
+#if !defined(__cplusplus_winrt) && !TV_API
 #include <winhttp.h>
 
 #endif // #if !defined(__cplusplus_winrt)
@@ -142,7 +149,7 @@
 #include "cpprest/ws_client.h"
 #include "cpprest/ws_msg.h"
 
-#if !defined(__cplusplus_winrt)
+#if !defined(__cplusplus_winrt) && !TV_API
 #if _WIN32_WINNT >= _WIN32_WINNT_VISTA
 #include "cpprest/details/http_server.h"
 #include "cpprest/http_listener.h"

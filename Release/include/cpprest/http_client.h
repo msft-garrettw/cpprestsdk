@@ -27,7 +27,7 @@
 #ifndef _CASA_HTTP_CLIENT_H
 #define _CASA_HTTP_CLIENT_H
 
-#if defined (__cplusplus_winrt)
+#if defined (__cplusplus_winrt) && !TV_API
 #if !defined(__WRL_NO_DEFAULT_LIB__)
 #define __WRL_NO_DEFAULT_LIB__
 #endif
@@ -51,7 +51,7 @@ typedef void* native_handle;}}}
 #include "cpprest/details/basic_types.h"
 #include "cpprest/asyncrt_utils.h"
 
-#if !defined(CPPREST_TARGET_XP)
+#if !defined(CPPREST_TARGET_XP) && (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP || _MSC_VER > 1700) && !TV_API
 #include "cpprest/oauth1.h"
 #endif
 
@@ -78,11 +78,13 @@ namespace http
 namespace client
 {
 
+#if !TV_API
 // credentials and web_proxy class has been moved from web::http::client namespace to web namespace.
 // The below using declarations ensure we don't break existing code.
 // Please use the web::credentials and web::web_proxy class going forward.
 using web::credentials;
 using web::web_proxy;
+#endif
 
 /// <summary>
 /// HTTP client configuration class, used to set the possible configuration options
@@ -109,7 +111,7 @@ public:
     {
     }
 
-#if !defined(CPPREST_TARGET_XP)
+#if !defined(CPPREST_TARGET_XP) && (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP || _MSC_VER > 1700) && !TV_API
     /// <summary>
     /// Get OAuth 1.0 configuration.
     /// </summary>
@@ -165,6 +167,7 @@ public:
         m_proxy = std::move(proxy);
     }
 
+#if !TV_API
     /// <summary>
     /// Get the client credentials
     /// </summary>
@@ -182,6 +185,7 @@ public:
     {
         m_credentials = cred;
     }
+#endif
 
     /// <summary>
     /// Get the 'guarantee order' property
@@ -370,13 +374,17 @@ public:
 #endif
 
 private:
-#if !defined(CPPREST_TARGET_XP)
+#if !defined(CPPREST_TARGET_XP) && (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP || _MSC_VER > 1700) && !TV_API
     std::shared_ptr<oauth1::experimental::oauth1_config> m_oauth1;
 #endif
 
     std::shared_ptr<oauth2::experimental::oauth2_config> m_oauth2;
     web_proxy m_proxy;
+
+#if !TV_API
     http::client::credentials m_credentials;
+#endif
+
     // Whether or not to guarantee ordering, i.e. only using one underlying TCP connection.
     bool m_guarantee_order;
 

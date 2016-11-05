@@ -28,19 +28,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{36d79e79-7e9e-4b3a-88a3-9f9b295c80b9}</ProjectGuid>
+    <ProjectGuid>{8EE38792-FFD4-4897-BB32-308A4DDCF0C5}</ProjectGuid>
     <Keyword>DynamicLibrary</Keyword>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
-    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <ApplicationTypeRevision>10</ApplicationTypeRevision>
     <ProjectName>cpprestsdk140.uwp</ProjectName>
     <PlatformToolset>v140</PlatformToolset>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OutDir>$(OutDir)\$(MsBuildProjectName)</OutDir>
+    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -69,27 +69,28 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-	  <PreprocessorDefinitions>_ASYNCRT_EXPORT;_PPLX_EXPORT;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_ASYNCRT_EXPORT;_PPLX_EXPORT;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>true</CompileAsWinRT>
-	  <AdditionalIncludeDirectories>$(CasablancaIncludeDir);$(CasablancaSrcDir)\pch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CasablancaIncludeDir);$(CasablancaSrcDir)\pch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <AdditionalOptions>-Zm250 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ProgramDataBaseFileName>$(OutDir)$(CppRestBaseFileName)140$(DebugFileSuffix)_uwp_$(CppRestSDKVersionFileSuffix).pdb</ProgramDataBaseFileName>
       <WholeProgramOptimization Condition="'$(Configuration)'=='Release'">true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-	  <LinkTimeCodeGeneration Condition="'$(Configuration)'=='Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="'$(Configuration)'=='Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup>
     <PostBuildEvent>
-      <Command>copy /Y $(OutDir)\* $(OutDir)..\
-        link /edit /appcontainer:no $(OutDir)..\$(TargetName).dll
+      <Command>copy /Y "$(OutDir)\*" "$(OutDir)..\"
+        link /edit /appcontainer:no "$(OutDir)..\$(TargetName).dll"
         exit 0</Command>
       <Message>Copying $(TargetName).winrt binaries to OutDir and removing appcontainer flag</Message>
     </PostBuildEvent>

@@ -175,10 +175,6 @@ if [ "${DO_BOOST}" == "1" ]
 then
 (
     (
-	if [ ! -d "Boost-for-Android" ]
-	then
-	    git clone https://github.com/MysticTreeGames/Boost-for-Android.git
-	fi
 	cd Boost-for-Android
 	if [ ! -e "cpprestsdk.patched.stamp" ]
 	then
@@ -187,14 +183,10 @@ then
 	    git apply "$DIR/boost-for-android.patch"
 	    touch cpprestsdk.patched.stamp
 	fi
-	PATH="$PATH:$NDK_DIR" ./build-android.sh --boost=1.55.0 --with-libraries=locale,random,date_time,filesystem,system,thread,chrono "${NDK_DIR}" || exit 1
+	PATH="$PATH:$NDK_DIR" ./build-android.sh --boost=1.59.0 --with-libraries=atomic,date_time,filesystem,system,thread,chrono "${NDK_DIR}" || exit 1
     )
 
     (
-	if [ ! -d "Boost-for-Android-x86" ]
-	then
-	    git clone Boost-for-Android Boost-for-Android-x86
-	fi
 	cd Boost-for-Android-x86
 	if [ ! -e "cpprestsdk.patched.stamp" ]
 	then
@@ -204,7 +196,7 @@ then
 	    ln -s ../Boost-for-Android/boost_1_55_0.tar.bz2 .
 	    touch cpprestsdk.patched.stamp
 	fi
-	PATH="$PATH:$NDK_DIR" ./build-android.sh --boost=1.55.0 --with-libraries=locale,random,date_time,filesystem,system,thread,chrono "${NDK_DIR}" || exit 1
+	PATH="$PATH:$NDK_DIR" ./build-android.sh --boost=1.59.0 --with-libraries=atomic,date_time,filesystem,system,thread,chrono "${NDK_DIR}" || exit 1
     )
 )
 fi

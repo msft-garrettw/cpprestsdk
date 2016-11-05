@@ -28,18 +28,18 @@
 using namespace web;
 
 bool json::details::g_keep_json_object_unsorted = false;
-void json::keep_object_element_order(bool keep_order)
+void __cdecl json::keep_object_element_order(bool keep_order)
 {
     json::details::g_keep_json_object_unsorted = keep_order;
 }
 
-utility::ostream_t& web::json::operator << (utility::ostream_t &os, const web::json::value &val)
+utility::ostream_t& __cdecl web::json::operator << (utility::ostream_t &os, const web::json::value &val)
 {
     val.serialize(os);
     return os;
 }
 
-utility::istream_t& web::json::operator >> (utility::istream_t &is, json::value &val)
+utility::istream_t& __cdecl web::json::operator >> (utility::istream_t &is, json::value &val)
 {
     val = json::value::parse(is);
     return is;

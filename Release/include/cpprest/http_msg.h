@@ -18,6 +18,7 @@
 *
 * HTTP Library: Request and reply message definitions.
 *
+* For the latest on this and related APIs, please see http://casablanca.codeplex.com.
 * For the latest on this and related APIs, please see: https://github.com/Microsoft/cpprestsdk
 *
 * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -737,6 +738,14 @@ public:
 
     void _set_base_uri(const http::uri &base_uri) { m_base_uri = base_uri; }
 
+    _ASYNCRTIMP void _record_body_data_for_retry(const concurrency::streams::istream &stream);
+
+    _ASYNCRTIMP void _record_body_data_for_retry(const std::vector<unsigned char> &body_data);
+
+    _ASYNCRTIMP void _record_body_data_for_retry(const utf8string &body_text, const utf8string &content_type);
+
+    _ASYNCRTIMP bool _reset_body_for_retry();
+
 private:
 
     // Actual initiates sending the response, without checking if a response has already been sent.
@@ -760,6 +769,13 @@ private:
     std::shared_ptr<progress_handler> m_progress_handler;
 
     pplx::task_completion_event<http_response> m_response;
+
+    bool m_bodyTextRecorded;
+    bool m_bodyVectorRecorded;
+    bool m_onlySetBodyUsingStream;
+    utf8string m_bodyText;
+    utf8string m_contentType;
+    std::vector<unsigned char> m_bodyVector;
 };
 
 
@@ -921,6 +937,7 @@ public:
     void set_body(utf8string &&body_text, const utf8string &content_type = utf8string("text/plain; charset=utf-8"))
     {
         const auto length = body_text.size();
+        _m_impl->_record_body_data_for_retry(body_text, content_type);
         _m_impl->set_body(concurrency::streams::bytestream::open_istream<std::string>(std::move(body_text)), length, content_type);
     }
 
@@ -935,6 +952,7 @@ public:
     /// </remarks>
     void set_body(const utf8string &body_text, const utf8string &content_type = utf8string("text/plain; charset=utf-8"))
     {
+        _m_impl->_record_body_data_for_retry(body_text, content_type);
         _m_impl->set_body(concurrency::streams::bytestream::open_istream<std::string>(body_text), body_text.size(), content_type);
     }
 
@@ -957,10 +975,12 @@ public:
 
         auto utf8body = utility::conversions::utf16_to_utf8(body_text);
         auto length = utf8body.size();
+        auto contextTypeAppended = content_type.append(::utility::conversions::to_utf16string("; charset=utf-8"));
+        _m_impl->_record_body_data_for_retry(utf8body, utility::conversions::utf16_to_utf8(contextTypeAppended));
         _m_impl->set_body(concurrency::streams::bytestream::open_istream(
         		std::move(utf8body)),
         		length,
-        		std::move(content_type.append(::utility::conversions::to_utf16string("; charset=utf-8"))));
+        		std::move(contextTypeAppended));
     }
 
     /// <summary>
@@ -975,6 +995,9 @@ public:
     {
         auto body_text = utility::conversions::to_utf8string(body_data.serialize());
         auto length = body_text.size();
+        utf8string contentType = "application/json";
+        _m_impl->_record_body_data_for_retry(body_text, contentType);
+        _m_impl->set_body(concurrency::streams::bytestream::open_istream(std::move(body_text)), length, contentType);
         _m_impl->set_body(concurrency::streams::bytestream::open_istream(std::move(body_text)), length, _XPLATSTR("application/json"));
     }
 
@@ -989,6 +1012,7 @@ public:
     void set_body(std::vector<unsigned char> &&body_data)
     {
         auto length = body_data.size();
+        _m_impl->_record_body_data_for_retry(body_data);
         _m_impl->set_body(concurrency::streams::bytestream::open_istream(std::move(body_data)), length, _XPLATSTR("application/octet-stream"));
     }
 
@@ -1002,6 +1026,7 @@ public:
     /// </remarks>
     void set_body(const std::vector<unsigned char> &body_data)
     {
+        _m_impl->_record_body_data_for_retry(body_data);
         set_body(concurrency::streams::bytestream::open_istream(body_data), body_data.size());
     }
 
@@ -1017,6 +1042,7 @@ public:
     /// </remarks>
     void set_body(const concurrency::streams::istream &stream, const utility::string_t &content_type = _XPLATSTR("application/octet-stream"))
     {
+        _m_impl->_record_body_data_for_retry(stream);
         _m_impl->set_body(stream, content_type);
     }
 
@@ -1033,6 +1059,7 @@ public:
     /// </remarks>
     void set_body(const concurrency::streams::istream &stream, utility::size64_t content_length, const utility::string_t &content_type = _XPLATSTR("application/octet-stream"))
     {
+        _m_impl->_record_body_data_for_retry(stream);
         _m_impl->set_body(stream, content_length, content_type);
     }
 
@@ -1277,6 +1304,16 @@ public:
     void _set_base_uri(const http::uri &base_uri)
     {
         _m_impl->_set_base_uri(base_uri);
+    }
+
+    void _set_body_internal(const concurrency::streams::istream &stream, const utility::string_t &content_type = _XPLATSTR("application/octet-stream"))
+    {
+        _m_impl->set_body(stream, content_type);
+    }
+
+    bool _reset_body_for_retry()
+    {
+        return _m_impl->_reset_body_for_retry();
     }
 
 private:

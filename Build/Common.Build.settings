@@ -34,7 +34,7 @@
 
   <!-- paths can be overridden by configuration -->
   <PropertyGroup>
-    <OutputPath>$(BuildRoot)\Binaries\$(Platform)\$(Configuration)\</OutputPath>
+    <OutputPath>$(BuildRoot)\..\Binaries\$(Configuration)\$(Platform)\Casablanca\</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <IntDir>$(BuildRoot)\Intermediate\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TestRoot>$(BuildRoot)\Release\Tests</TestRoot>
@@ -44,6 +44,8 @@
     <WebsocketppIncludeDir>$(BuildRoot)\Release\libs\websocketpp</WebsocketppIncludeDir>
     <PackagesRoot Condition="'$(PackagesRoot)'=='' AND Exists('$(BuildRoot)\packages')">$(BuildRoot)\packages</PackagesRoot>
     <PackagesRoot Condition="'$(PackagesRoot)'=='' AND Exists('$(BuildRoot)\..\Tools\packages')">$(BuildRoot)\..\Tools\packages</PackagesRoot>
+    <PackagesRoot Condition="'$(PackagesRoot)'=='' AND Exists('$(BuildRoot)\..\External\Packages')">$(BuildRoot)\..\External\Packages</PackagesRoot>
+    <CollateralsDir>$(BuildRoot)\Release\Collateral</CollateralsDir>
   </PropertyGroup>
 
   <!-- paths will not be overridden -->

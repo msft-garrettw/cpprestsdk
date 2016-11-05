@@ -25,7 +25,7 @@
 
 #include "stdafx.h"
 
-#if !defined(CPPREST_TARGET_XP)
+#if !defined(CPPREST_TARGET_XP) && (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP || _MSC_VER > 1700)
 
 using namespace utility;
 using web::http::client::http_client;
@@ -53,7 +53,7 @@ namespace experimental
 //
 // Start of platform-dependent _hmac_sha1() block...
 //
-#if defined(_WIN32) && !defined(__cplusplus_winrt) // Windows desktop
+#if defined(_WIN32) && (!defined(__cplusplus_winrt) || TV_API) // Windows desktop
 
 #include <winternl.h>
 #include <bcrypt.h>

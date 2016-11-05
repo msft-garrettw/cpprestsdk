@@ -522,6 +522,7 @@ inline masking_key_type get_masking_key(const basic_header &h, const
     if (!get_masked(h)) {
         temp32.i = 0;
     } else {
+        temp32.i = 0;
         unsigned int offset = get_masking_key_offset(h);
         auto ptr = e.bytes.begin() + offset;
         std::copy(ptr, ptr + 4, temp32.c.begin());
@@ -541,6 +542,7 @@ inline masking_key_type get_masking_key(const basic_header &h, const
  */
 inline uint16_t get_extended_size(const extended_header &e) {
     uint16_converter temp16;
+    temp16.i = 0;
     std::copy(e.bytes.begin() , e.bytes.begin() + 2, temp16.c.begin());
     return ntohs(temp16.i);
 }
@@ -556,6 +558,7 @@ inline uint16_t get_extended_size(const extended_header &e) {
  */
 inline uint64_t get_jumbo_size(const extended_header &e) {
     uint64_converter temp64;
+    temp64.i = 0;
     std::copy(e.bytes.begin(), e.bytes.begin() + 8, temp64.c.begin());
     return lib::net::_ntohll(temp64.i);
 }

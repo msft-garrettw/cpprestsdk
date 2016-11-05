@@ -28,13 +28,19 @@
 
 #include "cpprest/details/http_client_impl.h"
 
+#if !TV_API
 #include <Strsafe.h>
+#endif
 // Important for WP8
 #if !defined(__WRL_NO_DEFAULT_LIB__)
 #define __WRL_NO_DEFAULT_LIB__
 #endif
 #include <wrl.h>
+#if !TV_API
 #include <msxml6.h>
+#else
+#include <ixmlhttprequest2.h>
+#endif
 using namespace std;
 using namespace Platform;
 using namespace Microsoft::WRL;
@@ -396,10 +402,14 @@ protected:
 
         // Start sending HTTP request.
         HRESULT hr = CoCreateInstance(
-            __uuidof(FreeThreadedXMLHTTP60),
-            nullptr,
-            CLSCTX_INPROC,
-            __uuidof(IXMLHTTPRequest2),
+            __uuidof(FreeThreadedXMLHTTP60), 
+            nullptr, 
+#if TV_API
+            CLSCTX_SERVER,
+#else
+            CLSCTX_INPROC, 
+#endif
+            __uuidof(IXMLHTTPRequest2), 
             reinterpret_cast<void**>(winrt_context->m_hRequest.GetAddressOf()));
         if (FAILED(hr))
         {
@@ -410,21 +420,25 @@ protected:
         utility::string_t encoded_resource = http::uri_builder(m_uri).append(msg.relative_uri()).to_string();
 
         const auto &config = client_config();
-        const auto &client_cred = config.credentials();
+
+#if !TV_API
         const auto &proxy = config.proxy();
+        const auto &client_cred = config.credentials();
         const auto &proxy_cred = proxy.credentials();
         if (!proxy.is_default())
         {
             request->report_exception(http_exception(L"Only a default proxy server is supported"));
             return;
         }
-
+#endif
         // New scope to ensure plain text password is cleared as soon as possible.
         {
             utility::string_t username, proxy_username;
             const utility::char_t *password = nullptr;
             const utility::char_t *proxy_password = nullptr;
+#if !TV_API
             ::web::details::plaintext_string password_plaintext, proxy_password_plaintext;
+
 
             if (client_cred.is_set())
             {
@@ -438,7 +452,7 @@ protected:
                 proxy_password_plaintext = proxy_cred.decrypt();
                 proxy_password = proxy_password_plaintext->c_str();
             }
-
+#endif
             hr = winrt_context->m_hRequest->Open(
                 msg.method().c_str(),
                 encoded_resource.c_str(),

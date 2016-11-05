@@ -238,7 +238,7 @@ utility::string_t details::http_msg_base::parse_and_check_content_type(bool igno
 
         if (!check_content_type(content))
         {
-            throw http_exception(_XPLATSTR("Incorrect Content-Type: must be textual to extract_string, JSON to extract_json."));
+            return utility::string_t(); 
         }
     }
     return charset;
@@ -444,7 +444,7 @@ json::value details::http_msg_base::_extract_json(bool ignore_content_type)
     const auto &charset = parse_and_check_content_type(ignore_content_type, is_content_type_json);
     if (charset.empty())
     {
-        return json::value();
+        return json::value(extract_string(ignore_content_type));
     }
     auto buf_r = instream().streambuf();
 
@@ -633,11 +633,11 @@ static void set_content_type_if_not_present(http::http_headers &headers, const u
 void details::http_msg_base::set_body(const streams::istream &instream, const utf8string &contentType)
 {
     set_content_type_if_not_present(
-    		headers(),
+            headers(),
 #ifdef _UTF16_STRINGS
-    		utility::conversions::utf8_to_utf16(contentType));
+            utility::conversions::utf8_to_utf16(contentType));
 #else
-    		contentType);
+            contentType);
 #endif
     set_instream(instream);
 }
@@ -645,11 +645,11 @@ void details::http_msg_base::set_body(const streams::istream &instream, const ut
 void details::http_msg_base::set_body(const streams::istream &instream, const utf16string &contentType)
 {
     set_content_type_if_not_present(
-    		headers(),
+            headers(),
 #ifdef _UTF16_STRINGS
-    		contentType);
+            contentType);
 #else
-    		utility::conversions::utf16_to_utf8(contentType));
+            utility::conversions::utf16_to_utf8(contentType));
 #endif
     set_instream(instream);
 }
@@ -672,7 +672,10 @@ details::_http_request::_http_request(http::method mtd)
   : m_method(std::move(mtd)),
     m_initiated_response(0),
     m_server_context(),
-    m_cancellationToken(pplx::cancellation_token::none())
+    m_cancellationToken(pplx::cancellation_token::none()),
+    m_bodyTextRecorded(false),
+    m_bodyVectorRecorded(false),
+    m_onlySetBodyUsingStream(false)
 {
     if(m_method.empty())
     {
@@ -683,7 +686,10 @@ details::_http_request::_http_request(http::method mtd)
 details::_http_request::_http_request(std::unique_ptr<http::details::_http_server_context> server_context)
   : m_initiated_response(0),
     m_server_context(std::move(server_context)),
-    m_cancellationToken(pplx::cancellation_token::none())
+    m_cancellationToken(pplx::cancellation_token::none()),
+    m_bodyTextRecorded(false),
+    m_bodyVectorRecorded(false),
+    m_onlySetBodyUsingStream(false)
 {
 }
 

@@ -30,6 +30,9 @@
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-local-typedef"
+#ifndef BOOST_ASIO_HAS_STD_CHRONO
+#define BOOST_ASIO_HAS_STD_CHRONO
+#endif
 #endif
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -46,6 +49,7 @@
 #include "cpprest/details/http_client_impl.h"
 #include "cpprest/details/x509_cert_utilities.h"
 #include <unordered_set>
+#include <chrono>
 
 using boost::asio::ip::tcp;
 
@@ -361,7 +365,7 @@ public:
     : request_context(client, request)
     , m_content_length(0)
     , m_needChunked(false)
-    , m_timer(client->client_config().timeout<std::chrono::microseconds>())
+    , m_timer(client->client_config().timeout<std::chrono::nanoseconds>())
     , m_connection(connection)
 #if defined(__APPLE__) || (defined(ANDROID) || defined(__ANDROID__))
     , m_openssl_failed(false)
@@ -474,7 +478,7 @@ public:
             {
                 m_context->report_error("Failed to send connect request to proxy.", err, httpclient_errorcode_context::writebody);
             }
-	    }
+        }
     
         void handle_status_line(const boost::system::error_code& ec)
         {
@@ -1349,7 +1353,7 @@ private:
     {
     public:
 
-        timeout_timer(const std::chrono::microseconds& timeout) :
+        timeout_timer(const std::chrono::nanoseconds& timeout) :
         m_duration(timeout.count()),
         m_state(created),
         m_timer(crossplat::threadpool::shared_instance().service())
@@ -1365,7 +1369,7 @@ private:
             assert(m_state == created);
             assert(!m_ctx.expired());
             m_state = started;
-
+            
             m_timer.expires_from_now(m_duration);
             auto ctx = m_ctx;
             m_timer.async_wait([ctx](const boost::system::error_code& ec)
@@ -1425,7 +1429,7 @@ private:
         };
 
 #if defined(ANDROID) || defined(__ANDROID__)
-        boost::chrono::microseconds m_duration;
+        std::chrono::nanoseconds m_duration;
 #else
         std::chrono::microseconds m_duration;
 #endif

@@ -79,6 +79,47 @@ utility::string_t details::_http_request::to_string() const
     return buffer.str();
 }
 
+void details::_http_request::_record_body_data_for_retry(const concurrency::streams::istream &stream)
+{
+    CASABLANCA_UNREFERENCED_PARAMETER(stream);
+    if (!m_bodyTextRecorded && !m_bodyVectorRecorded)
+    {
+        m_onlySetBodyUsingStream = true;
+    }
+}
+
+void details::_http_request::_record_body_data_for_retry(const std::vector<unsigned char> &body_data)
+{
+    m_bodyVector = body_data;
+    m_bodyVectorRecorded = true;
+}
+
+void details::_http_request::_record_body_data_for_retry(const utf8string &body_text, const utf8string &content_type)
+{
+    m_bodyText = body_text;
+    m_contentType = content_type;
+    m_bodyTextRecorded = true;
+}
+
+bool details::_http_request::_reset_body_for_retry()
+{
+    if (m_onlySetBodyUsingStream)
+    {
+        return false;
+    }
+
+    if (m_bodyTextRecorded)
+    {
+        set_body(concurrency::streams::bytestream::open_istream(m_bodyText), m_bodyText.size(), m_contentType);
+    }
+    else if (m_bodyVectorRecorded)
+    {
+        set_body(concurrency::streams::bytestream::open_istream(m_bodyVector), m_bodyVector.size(), "application/octet-stream");
+    }
+
+    return true;
+}
+
 utility::string_t details::_http_response::to_string() const
 {
     // If the user didn't explicitly set a reason phrase then we should have it default
@@ -86,7 +127,22 @@ utility::string_t details::_http_response::to_string() const
     auto reason_phrase = m_reason_phrase;
     if(reason_phrase.empty())
     {
-        reason_phrase = get_default_reason_phrase(status_code());
+        static http_status_to_phrase idToPhraseMap[] = {
+#define _PHRASES
+#define DAT(a,b,c) {status_codes::a, c},
+#include "cpprest/details/http_constants.dat"
+#undef _PHRASES
+#undef DAT
+        };
+
+        for( auto iter = std::begin(idToPhraseMap); iter != std::end(idToPhraseMap); ++iter)
+        {
+            if( iter->id == status_code() )
+            {
+                reason_phrase = iter->phrase;
+                break;
+            }
+        }
     }
 
     utility::ostringstream_t buffer;

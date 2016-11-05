@@ -104,6 +104,7 @@ public:
         m_proxy = proxy;
     }
 
+#if !TV_API
     /// <summary>
     /// Get the client credentials
     /// </summary>
@@ -121,6 +122,7 @@ public:
     {
         m_credentials = cred;
     }
+#endif
 
     /// <summary>
     /// Disables Server Name Indication (SNI). Default is on.
@@ -190,7 +192,9 @@ public:
 
 private:
     web::web_proxy m_proxy;
+#if !TV_API
     web::credentials m_credentials;
+#endif
     web::http::http_headers m_headers;
     bool m_sni_enabled;
     utf8string m_sni_hostname;

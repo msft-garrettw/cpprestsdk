@@ -62,8 +62,12 @@ scoped_c_thread_locale::xplat_locale scoped_c_thread_locale::c_locale()
     {
         scoped_c_thread_locale::xplat_locale *clocale = new scoped_c_thread_locale::xplat_locale();
 #ifdef _WIN32
+        if (clocale == nullptr)
+        {
+            throw std::runtime_error("Unable to create 'C' locale.");
+        }
         *clocale = _create_locale(LC_ALL, "C");
-        if (*clocale == nullptr)
+        if (clocale == nullptr || *clocale == nullptr)
         {
             throw std::runtime_error("Unable to create 'C' locale.");
         }
@@ -911,6 +915,7 @@ datetime __cdecl datetime::from_string(const utility::string_t& dateString, date
         {
             unsetenv("TZ");
         }
+        tzset();
     }
 #else
     time_t time = timegm(&output);

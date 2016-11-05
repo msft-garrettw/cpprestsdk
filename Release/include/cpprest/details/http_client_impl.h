@@ -107,7 +107,7 @@ public:
         // We have already read (and transmitted) the request body. Should we explicitly close the stream?
         // Well, there are test cases that assumes that the istream is valid when t receives the response!
         // For now, we will drop our reference which will close the stream if the user doesn't have one.
-        m_request.set_body(Concurrency::streams::istream());
+        m_request._set_body_internal(Concurrency::streams::istream());
         m_request_completion.set(m_response);
     }
 
@@ -442,7 +442,7 @@ void http_client::build_pipeline(const uri &base_uri, const http_client_config &
         m_pipeline = ::web::http::http_pipeline::create_pipeline(std::make_shared<details::http_network_handler>(base_uri, client_config));
     }
 
-#if !defined(CPPREST_TARGET_XP)
+#if !defined(CPPREST_TARGET_XP) && (!defined(WINAPI_FAMILY) || WINAPI_FAMILY != WINAPI_FAMILY_PHONE_APP || _MSC_VER > 1700) && !TV_API
     add_handler(std::static_pointer_cast<http::http_pipeline_stage>(
         std::make_shared<oauth1::details::oauth1_handler>(client_config.oauth1())));
 #endif
