@@ -1553,7 +1553,4 @@ namespace web {
 					return result_task;
 				}
 
-			}
-		}
-	}
-} // namespaces
+}}}} // namespaces
